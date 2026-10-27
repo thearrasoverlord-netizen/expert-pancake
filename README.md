@@ -8,9 +8,10 @@ This is an original implementation; it does not include proprietary Smash Hit so
 
 - 3D world coordinates with perspective projection
 - First-person corridor drawn from 3D lines and faces
-- Glass targets with volume and perspective
+- Glass targets and tall, four-faced 3D pyramid obstacles
+- Aim and throw by clicking anywhere in the game viewport
 - Balls with 3D position, velocity, and gravity
-- Collision detection between projectiles and glass targets
+- Collision detection between projectiles and glass targets and pyramid obstacles
 - Glass-break particles with individual motion
 - Score, limited balls, and restart
 - No external libraries
@@ -36,7 +37,7 @@ If the `out` directory already exists, you can skip `mkdir out`.
 
 ## Controls
 
-- **Left-click:** throw a ball toward the cursor
+- **Left-click anywhere in the game area:** throw a ball toward that point
 - **R:** restart
 - **Esc:** exit
 
@@ -46,7 +47,7 @@ If the `out` directory already exists, you can skip `mkdir out`.
 - [x] 3D projectile motion and gravity
 - [x] Glass collision and break particles
 - [ ] Improved fragment geometry and collision response
-- [ ] Camera movement and level configuration
+- [ ] Camera movement and instruction-driven level configuration
 - [ ] Explore a Java ME / J2ME-compatible renderer and controls
 
 ## License
