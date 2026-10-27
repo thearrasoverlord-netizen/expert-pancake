@@ -447,9 +447,7 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         requestFocusInWindow();
     }
 
-    @Override public void mouseClicked(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1) throwBall(e.getX(), e.getY());
-    }
+    @Override public void mouseClicked(MouseEvent e) { }
     @Override public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) throwBall(e.getX(), e.getY());
     }
