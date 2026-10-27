@@ -1,16 +1,21 @@
 # Expert Pancake
 
-An open-source Java arcade prototype inspired by first-person glass-smashing games. The project starts with a simple pseudo-3D renderer and is intended to be customizable, with a possible Java ME (J2ME) version later.
+An open-source Java arcade prototype inspired by first-person glass-smashing games. The project starts with a dependency-free 3D-world prototype and is intended to become customizable, with a possible Java ME (J2ME) version later.
 
-This is an original implementation: it does not include proprietary Smash Hit source code or assets.
+This is an original implementation; it does not include proprietary Smash Hit source code or assets.
 
 ## Current prototype
 
-- Pseudo-3D corridor drawn with Java2D
-- Glass targets that approach the player
-- Click targets to throw a ball and earn points
-- Limited balls, score, and restart
+- 3D world coordinates with perspective projection
+- First-person corridor drawn from 3D lines and faces
+- Glass targets with volume and perspective
+- Balls with 3D position, velocity, and gravity
+- Collision detection between projectiles and glass targets
+- Glass-break particles with individual motion
+- Score, limited balls, and restart
 - No external libraries
+
+> The current renderer is a lightweight software renderer using Java2D and perspective projection, not a hardware-accelerated 3D engine yet. This keeps the prototype easy to compile and provides a base for future renderer improvements.
 
 ## Requirements
 
@@ -22,24 +27,26 @@ This is an original implementation: it does not include proprietary Smash Hit so
 From the repository root:
 
 ```sh
+mkdir out
 javac -d out src/Main.java src/Game.java
 java -cp out Main
 ```
 
-On Windows, these commands also work in Command Prompt or PowerShell.
+If the `out` directory already exists, you can skip `mkdir out`.
 
 ## Controls
 
-- **Left-click:** throw a ball at a glass target
-- **R:** restart the run
+- **Left-click:** throw a ball toward the cursor
+- **R:** restart
 - **Esc:** exit
 
 ## Roadmap
 
-- [x] First playable Java desktop prototype
-- [ ] Separate game settings and customizable parameters
-- [ ] Add original sound effects and simple level data
-- [ ] Improve collision and perspective
+- [x] 3D coordinates and perspective projection
+- [x] 3D projectile motion and gravity
+- [x] Glass collision and break particles
+- [ ] Improved fragment geometry and collision response
+- [ ] Camera movement and level configuration
 - [ ] Explore a Java ME / J2ME-compatible renderer and controls
 
 ## License
