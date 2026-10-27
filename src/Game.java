@@ -35,6 +35,7 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
     private static final int STARTING_BALLS = 35;
 
     private final ArrayList<Glass> glasses = new ArrayList<Glass>();
+    private final ArrayList<Pyramid> pyramids = new ArrayList<Pyramid>();
     private final ArrayList<Ball> ballsInFlight = new ArrayList<Ball>();
     private final ArrayList<Particle> particles = new ArrayList<Particle>();
     private final Random random = new Random();
@@ -46,7 +47,7 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
     private int score = 0;
     private int broken = 0;
     private int spawnCounter = 0;
-    private String message = "LEFT CLICK: THROW  |  R: RESTART";
+    private String message = "CLICK ANYWHERE: THROW  |  R: RESTART";
     private boolean gameOver = false;
     private int mouseX = WIDTH / 2;
     private int mouseY = HEIGHT / 2;
@@ -58,9 +59,10 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         addMouseListener(this);
         addMouseMotionListener(this);
         addKeyListener(this);
-        spawnGlass(12.0);
-        spawnGlass(18.0);
-        spawnGlass(25.0);
+        spawnGlass(15.0);
+        spawnPyramid(11.0);
+        spawnPyramid(21.0);
+        spawnPyramid(30.0);
         timer.start();
     }
 
@@ -80,10 +82,25 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         spawnCounter++;
         if (spawnCounter >= 115) {
             spawnCounter = 0;
-            spawnGlass(27.0 + random.nextDouble() * 8.0);
+            if (random.nextDouble() < 0.72) {
+                spawnPyramid(27.0 + random.nextDouble() * 8.0);
+            } else {
+                spawnGlass(27.0 + random.nextDouble() * 8.0);
+            }
         }
 
         worldSpeed = Math.min(5.0, 2.6 + broken * 0.025);
+
+        Iterator<Pyramid> pyramidIterator = pyramids.iterator();
+        while (pyramidIterator.hasNext()) {
+            Pyramid pyramid = pyramidIterator.next();
+            pyramid.z -= worldSpeed * dt;
+            if (pyramid.z < 0.8) {
+                pyramidIterator.remove();
+                message = "PYRAMID PASSED!";
+                score += 2;
+            }
+        }
 
         Iterator<Glass> glassIterator = glasses.iterator();
         while (glassIterator.hasNext()) {
@@ -106,7 +123,18 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
             ball.life -= dt;
 
             boolean hit = false;
-            for (int i = glasses.size() - 1; i >= 0; i--) {
+            for (int i = pyramids.size() - 1; i >= 0; i--) {
+                Pyramid pyramid = pyramids.get(i);
+                if (Math.abs(ball.x - pyramid.x) < pyramid.width * 0.5 + ball.radius
+                        && ball.y >= pyramid.baseY - ball.radius
+                        && ball.y <= pyramid.baseY + pyramid.height + ball.radius
+                        && Math.abs(ball.z - pyramid.z) < pyramid.depth * 0.5 + ball.radius) {
+                    hit = true;
+                    message = "PYRAMID HIT!";
+                    break;
+                }
+            }
+            for (int i = glasses.size() - 1; i >= 0 && !hit; i--) {
                 Glass glass = glasses.get(i);
                 if (Math.abs(ball.x - glass.x) < glass.size * 0.5 + ball.radius
                         && Math.abs(ball.y - glass.y) < glass.size * 0.5 + ball.radius
@@ -153,6 +181,14 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         glasses.add(new Glass(x, y, z, size));
     }
 
+    private void spawnPyramid(double z) {
+        double x = -3.4 + random.nextDouble() * 6.8;
+        double width = 1.5 + random.nextDouble() * 1.1;
+        double height = 2.3 + random.nextDouble() * 1.3;
+        double depth = 1.1 + random.nextDouble() * 0.5;
+        pyramids.add(new Pyramid(x, -2.4, z, width, height, depth));
+    }
+
     private void burst(double x, double y, double z) {
         // Original simple glass-like particles, each with its own 3D velocity.
         for (int i = 0; i < 24; i++) {
@@ -174,11 +210,13 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         drawCorridor(g);
 
         // Draw distant objects first so near objects naturally overlay them.
+        ArrayList<Pyramid> sortedPyramids = new ArrayList<Pyramid>(pyramids);
+        sortedPyramids.sort((a, b) -> Double.compare(b.z, a.z));
+        for (Pyramid pyramid : sortedPyramids) drawPyramid(g, pyramid);
+
         ArrayList<Glass> sortedGlass = new ArrayList<Glass>(glasses);
         sortedGlass.sort((a, b) -> Double.compare(b.z, a.z));
-        for (Glass glass : sortedGlass) {
-            drawGlass(g, glass);
-        }
+        for (Glass glass : sortedGlass) drawGlass(g, glass);
 
         for (Particle p : particles) {
             drawParticle(g, p);
@@ -254,6 +292,38 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         // Bright glint on the front face.
         drawLine3D(g, x - s * 0.55, y + s * 0.55, z - s,
                 x + s * 0.2, y + s * 0.55, z - s);
+    }
+
+    private void drawPyramid(Graphics2D g, Pyramid p) {
+        double left = p.x - p.width / 2.0;
+        double right = p.x + p.width / 2.0;
+        double front = p.z - p.depth / 2.0;
+        double back = p.z + p.depth / 2.0;
+        double bottom = p.baseY;
+        double top = p.baseY + p.height;
+        double[][] v = {
+            {left,bottom,front}, {right,bottom,front},
+            {right,bottom,back}, {left,bottom,back},
+            {p.x,top,p.z}
+        };
+        int[][] faces = {{0,1,4},{1,2,4},{2,3,4},{3,0,4}};
+        Color[] colors = {
+            new Color(255, 100, 45, 210), new Color(190, 48, 35, 220),
+            new Color(125, 30, 55, 220), new Color(255, 155, 65, 190)
+        };
+        for (int i = 0; i < faces.length; i++) {
+            Polygon face = projectFace(v, faces[i]);
+            if (face != null) {
+                g.setColor(colors[i]);
+                g.fillPolygon(face);
+                g.setColor(new Color(255, 205, 150, 230));
+                g.setStroke(new BasicStroke(1.5f));
+                g.drawPolygon(face);
+            }
+        }
+        // Highlight the tall /\ silhouette and the apex.
+        drawLine3D(g, p.x, top, p.z, left, bottom, front);
+        drawLine3D(g, p.x, top, p.z, right, bottom, front);
     }
 
     private Polygon projectFace(double[][] vertices, int[] indices) {
@@ -365,17 +435,22 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         worldSpeed = 2.6;
         gameOver = false;
         glasses.clear();
+        pyramids.clear();
         ballsInFlight.clear();
         particles.clear();
-        spawnGlass(12.0);
-        spawnGlass(18.0);
-        spawnGlass(25.0);
-        message = "LEFT CLICK: THROW  |  R: RESTART";
+        spawnGlass(15.0);
+        spawnPyramid(11.0);
+        spawnPyramid(21.0);
+        spawnPyramid(30.0);
+        message = "CLICK ANYWHERE: THROW  |  R: RESTART";
         previousNanos = System.nanoTime();
         requestFocusInWindow();
     }
 
     @Override public void mouseClicked(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) throwBall(e.getX(), e.getY());
+    }
+    @Override public void mousePressed(MouseEvent e) {
         if (e.getButton() == MouseEvent.BUTTON1) throwBall(e.getX(), e.getY());
     }
     @Override public void mouseMoved(MouseEvent e) { mouseX = e.getX(); mouseY = e.getY(); }
@@ -384,7 +459,6 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         if (e.getKeyCode() == KeyEvent.VK_R) restart();
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) System.exit(0);
     }
-    @Override public void mousePressed(MouseEvent e) { }
     @Override public void mouseReleased(MouseEvent e) { }
     @Override public void mouseEntered(MouseEvent e) { }
     @Override public void mouseExited(MouseEvent e) { }
@@ -401,6 +475,15 @@ public final class Game extends JPanel implements ActionListener, MouseListener,
         double z;
         Glass(double x, double y, double z, double size) {
             this.x = x; this.y = y; this.z = z; this.size = size;
+        }
+    }
+
+    private static final class Pyramid {
+        final double x, baseY, width, height, depth;
+        double z;
+        Pyramid(double x, double baseY, double z, double width, double height, double depth) {
+            this.x = x; this.baseY = baseY; this.z = z;
+            this.width = width; this.height = height; this.depth = depth;
         }
     }
 
